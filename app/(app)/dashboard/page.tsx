@@ -278,7 +278,13 @@ export default function DashboardPage() {
     const avgSec = Math.round(totalSeconds / countWithDuration);
     const m = Math.floor(avgSec / 60);
     const s = avgSec % 60;
-    avgTimeToQuote = m > 0 ? `${m}m ${s}s` : `${s}s`;
+    if (m >= 60) {
+      const h = Math.floor(m / 60);
+      const remainingM = m % 60;
+      avgTimeToQuote = remainingM > 0 ? `${h}h ${remainingM}m` : `${h}h`;
+    } else {
+      avgTimeToQuote = m > 0 ? `${m}m ${s}s` : `${s}s`;
+    }
   }
 
   // AI lines kept calculation
