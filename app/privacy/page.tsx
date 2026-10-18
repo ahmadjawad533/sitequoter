@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <div className="mx-auto max-w-[720px]">
         <Link
           href="/"
-          className="inline-flex min-h-[40px] items-center text-sm font-medium text-[#1D4ED8] hover:underline mb-6"
+          className="inline-flex min-h-[48px] items-center text-sm font-medium text-[#1D4ED8] hover:underline mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home

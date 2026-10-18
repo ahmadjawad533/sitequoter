@@ -82,7 +82,7 @@ function JobsContent() {
         <Button
           asChild
           size="sm"
-          className="min-h-[44px] bg-[#F97316] text-white hover:bg-[#EA580C] px-4 font-semibold shadow-none rounded-xl"
+          className="min-h-[48px] bg-[#F97316] text-white hover:bg-[#EA580C] px-4 font-semibold shadow-none rounded-xl"
         >
           <Link href="/jobs/new" className="flex items-center gap-1.5">
             <Plus className="h-4 w-4" />
