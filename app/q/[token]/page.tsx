@@ -410,7 +410,7 @@ export default function CustomerQuotePage() {
               type="button"
               variant="outline"
               onClick={handlePrint}
-              className="w-full min-h-[44px] rounded-xl border-[#D1D5DB] text-[#374151] hover:bg-[#F3F4F6] text-sm font-semibold flex items-center justify-center gap-2"
+              className="w-full min-h-[48px] rounded-xl border-[#D1D5DB] text-[#374151] hover:bg-[#F3F4F6] text-sm font-semibold flex items-center justify-center gap-2"
             >
               <Download className="h-4 w-4" />
               <span>Download / Print PDF</span>
@@ -442,7 +442,7 @@ export default function CustomerQuotePage() {
 
         {/* Small branding footer */}
         <p className="text-center text-[11px] text-[#9CA3AF] print:hidden">
-          Delivered securely via SiteQuote · Fast, honest HVAC quotes
+          Delivered securely via SiteQuote. Fast, honest HVAC quotes.
         </p>
       </div>
     </div>
