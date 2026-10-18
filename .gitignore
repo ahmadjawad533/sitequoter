@@ -29,7 +29,6 @@ yarn-error.log*
 # Vercel
 .vercel
 
-# Operating System
-.DS_Store
-*.pem
-Thumbs.db
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts
