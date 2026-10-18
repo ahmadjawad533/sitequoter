@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   HelpCircle,
@@ -13,7 +13,6 @@ import {
   Plus,
   Send,
   Loader2,
-  Clock,
   ExternalLink,
   Copy,
   Check,
@@ -21,7 +20,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EditLineDialog, EditableLineItem } from "@/components/quotes/EditLineDialog";
+import { EditLineDialog } from "@/components/quotes/EditLineDialog";
 import { AddQuoteLineDialog } from "@/components/quotes/AddQuoteLineDialog";
 import { calculateQuoteTotals } from "@/lib/ai/calculator";
 import {
@@ -30,6 +29,17 @@ import {
   CompanySettingsForAi,
   CalculatedQuoteSummary,
 } from "@/lib/ai/schemas";
+
+const DEFAULT_PRICE_ITEMS: PriceItemForAi[] = [
+  { id: "pi-cap-1", name: "Capacitor 45/5 MFD Dual Run", category: "Parts", unit: "each", unit_price: 38, cost: 14 },
+  { id: "pi-con-1", name: "Contactor 30A Single Pole", category: "Parts", unit: "each", unit_price: 42, cost: 16 },
+  { id: "pi-mot-1", name: "Condenser Fan Motor 1/3 HP", category: "Motors", unit: "each", unit_price: 185, cost: 85 },
+  { id: "pi-thm-1", name: "Thermostat Smart Pro", category: "Controls", unit: "each", unit_price: 165, cost: 80 },
+  { id: "pi-ref-1", name: "R-410A Refrigerant (per lb)", category: "Refrigerants", unit: "lb", unit_price: 45, cost: 18 },
+  { id: "pi-tun-1", name: "Seasonal AC Maintenance Tune-Up", category: "Services", unit: "service", unit_price: 129, cost: 20 },
+  { id: "pi-fur-1", name: "High-Efficiency 80k BTU Gas Furnace", category: "Equipment", unit: "each", unit_price: 2450, cost: 1600 },
+  { id: "pi-hpt-1", name: "3-Ton 16 SEER2 Heat Pump Condenser", category: "Equipment", unit: "each", unit_price: 3100, cost: 2100 },
+];
 
 interface QuoteLineItem {
   id: string;
@@ -61,7 +71,6 @@ interface QuoteDetails {
 
 export default function QuoteReviewPage() {
   const params = useParams();
-  const router = useRouter();
   const quoteIdOrJobId = params?.id as string;
 
   const [loading, setLoading] = React.useState(true);
@@ -69,7 +78,7 @@ export default function QuoteReviewPage() {
   const [quote, setQuote] = React.useState<QuoteDetails | null>(null);
 
   // Price book catalog for "+ Add item" modal
-  const [priceBook, setPriceBook] = React.useState<PriceItemForAi[]>([]);
+  const [priceBook, setPriceBook] = React.useState<PriceItemForAi[]>(DEFAULT_PRICE_ITEMS);
 
   // Dialog states
   const [editingLine, setEditingLine] = React.useState<QuoteLineItem | null>(null);
@@ -81,6 +90,7 @@ export default function QuoteReviewPage() {
   // Sent state & link copying
   const [isSending, setIsSending] = React.useState(false);
   const [copiedLink, setCopiedLink] = React.useState(false);
+  const [sentSuccessNotice, setSentSuccessNotice] = React.useState(false);
 
   // Load quote details
   React.useEffect(() => {
@@ -93,8 +103,13 @@ export default function QuoteReviewPage() {
         const storedPrices = localStorage.getItem("sitequote_price_book");
         if (storedPrices) {
           try {
-            setPriceBook(JSON.parse(storedPrices));
-          } catch {}
+            const parsed = JSON.parse(storedPrices);
+            setPriceBook(parsed.length > 0 ? parsed : DEFAULT_PRICE_ITEMS);
+          } catch {
+            setPriceBook(DEFAULT_PRICE_ITEMS);
+          }
+        } else {
+          setPriceBook(DEFAULT_PRICE_ITEMS);
         }
 
         // Check local mock storage for existing quotes
@@ -399,12 +414,21 @@ export default function QuoteReviewPage() {
     updateQuoteState(quote.lines, newHours);
   };
 
+  const handleCopyLink = () => {
+    if (!quote) return;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/q/${quote.public_token}` : `/q/${quote.public_token}`;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+    }
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
   const handleSendQuote = async () => {
     if (!quote) return;
     setIsSending(true);
 
     try {
-      // Simulate network save
       await new Promise((r) => setTimeout(r, 600));
 
       const updatedQuote: QuoteDetails = {
@@ -412,6 +436,7 @@ export default function QuoteReviewPage() {
         status: "sent",
       };
       setQuote(updatedQuote);
+      setSentSuccessNotice(true);
 
       // Update in jobs list if matching job exists
       try {
@@ -433,9 +458,6 @@ export default function QuoteReviewPage() {
           }
         }
       } catch {}
-
-      // Navigate to share screen or show public token link
-      router.push(`/q/${quote.public_token}?sent=true`);
     } catch (err: any) {
       alert("Failed to send quote: " + err?.message);
     } finally {
@@ -500,6 +522,41 @@ export default function QuoteReviewPage() {
           </span>
         )}
       </div>
+
+      {/* Sent confirmation notification banner */}
+      {sentSuccessNotice && (
+        <div className="rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] p-4 text-[#166534] space-y-2">
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <CheckCircle2 className="h-4 w-4" />
+            <span>Quote marked as Sent to {quote.customerName}</span>
+          </div>
+          <p className="text-xs text-[#15803D]">
+            The customer quote link has been generated. You can copy the link below or view the customer page.
+          </p>
+          <div className="pt-1 flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleCopyLink}
+              className="bg-[#166534] text-white hover:bg-[#14532D] text-xs h-8 rounded-lg flex items-center gap-1"
+            >
+              {copiedLink ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              <span>{copiedLink ? "Copied!" : "Copy customer link"}</span>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs rounded-lg border-[#BBF7D0] bg-white text-[#166534] hover:bg-[#F0FDF4]"
+            >
+              <Link href={`/q/${quote.public_token}`} target="_blank">
+                <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                View customer page
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Main Items Card */}
       <div className="rounded-2xl border border-[#E5E7EB] bg-white p-4 sm:p-5 space-y-4">
@@ -763,25 +820,37 @@ export default function QuoteReviewPage() {
           ) : (
             <>
               <Send className="h-5 w-5" />
-              <span>{quote.status === "sent" ? "View or Share Quote" : "Send quote"}</span>
+              <span>{quote.status === "sent" ? "Resend or Update Quote" : "Send quote"}</span>
             </>
           )}
         </Button>
 
         {quote.status === "sent" && (
           <div className="p-3 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] flex items-center justify-between text-xs">
-            <span className="text-[#4B5563]">Customer link: /q/{quote.public_token}</span>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs rounded-lg"
-            >
-              <Link href={`/q/${quote.public_token}`} target="_blank">
-                <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                Open
-              </Link>
-            </Button>
+            <span className="text-[#4B5563] truncate mr-2">Link: /q/{quote.public_token}</span>
+            <div className="flex gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+                className="h-7 text-xs rounded-lg px-2"
+              >
+                {copiedLink ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
+                <span>{copiedLink ? "Copied" : "Copy"}</span>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs rounded-lg px-2"
+              >
+                <Link href={`/q/${quote.public_token}`} target="_blank">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  View
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
       </div>
