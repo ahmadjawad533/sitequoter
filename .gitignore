@@ -19,6 +19,7 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
 
 # Debug logs
 npm-debug.log*
@@ -32,3 +33,10 @@ yarn-error.log*
 # TypeScript build info
 *.tsbuildinfo
 next-env.d.ts
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+*.pem
+.vscode/
+.idea/
