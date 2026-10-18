@@ -49,12 +49,15 @@ export default function NewJobPage() {
     return Object.keys(errors).length === 0;
   };
 
+  const [generationStep, setGenerationStep] = React.useState<string>("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsSubmitting(true);
     setGeneralError(null);
+    setGenerationStep("Saving job and compressed photos...");
 
     try {
       const created = await createJob({
@@ -66,10 +69,53 @@ export default function NewJobPage() {
         photos: photos.map((p) => p.file),
       });
 
-      // Redirect back to jobs list with newly created job highlighted
+      setGenerationStep("AI analyzing equipment and matching price book...");
+
+      // Call server-side quote generation API
+      const res = await fetch("/api/quotes/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: created.id,
+          jobType,
+          notes,
+          companySettings: {
+            labor_rate: 95,
+            markup_percent: 20,
+            min_margin_percent: 25,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const quoteId = data.quoteId || data.quote?.id;
+        if (quoteId) {
+          // Store quote in local mock storage for fast offline navigation
+          try {
+            const stored = localStorage.getItem("sitequote_quotes");
+            const list = stored ? JSON.parse(stored) : [];
+            const newQuoteData = {
+              ...data.quote,
+              customerName: created.customer.name,
+              customerPhone: created.customer.phone,
+              customerAddress: created.customer.address,
+              jobType: created.job_type,
+            };
+            list.unshift(newQuoteData);
+            localStorage.setItem("sitequote_quotes", JSON.stringify(list));
+          } catch {}
+
+          // Navigate directly to Wireframe Screen 4 (Quote Review)
+          router.push(`/quotes/${quoteId}`);
+          return;
+        }
+      }
+
+      // Fallback: navigate to jobs list
       router.push(`/jobs?created=${created.id}`);
     } catch (err: any) {
-      setGeneralError(err?.message || "Failed to create job. Please try again.");
+      setGeneralError(err?.message || "Failed to create job and draft quote. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -238,7 +284,7 @@ export default function NewJobPage() {
             {isSubmitting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Creating job & saving photos...</span>
+                <span>{generationStep || "Generating AI quote..."}</span>
               </>
             ) : (
               <>

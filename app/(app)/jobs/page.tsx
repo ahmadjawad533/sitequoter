@@ -195,12 +195,13 @@ function JobsContent() {
           {filteredJobs.map((job) => {
             const isJustCreated = job.id === createdId;
             return (
-              <div
+              <Link
                 key={job.id}
-                className={`rounded-2xl border bg-white p-4 transition-all ${
+                href={`/quotes/${job.quote?.id || job.id}`}
+                className={`block rounded-2xl border bg-white p-4 transition-all hover:border-[#1D4ED8] hover:shadow-sm ${
                   isJustCreated
                     ? "border-[#1D4ED8] ring-2 ring-[#1D4ED8]/20"
-                    : "border-[#E5E7EB] hover:border-[#D1D5DB]"
+                    : "border-[#E5E7EB]"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -253,7 +254,7 @@ function JobsContent() {
                     })}
                   </span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
