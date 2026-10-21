@@ -290,8 +290,9 @@ Review the job and photos, match needed parts against the price book, estimate l
     }
   }
 
+  const modelName = process.env.GEMINI_MODEL || "gemini-3.8-flash";
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: modelName,
     contents,
     config: {
       systemInstruction,

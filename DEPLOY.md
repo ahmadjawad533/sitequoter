@@ -126,9 +126,10 @@ npm run build
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production, Preview | Your Supabase anon public API key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production, Preview | Your Supabase service role secret key |
 | `GEMINI_API_KEY` | Production, Preview | Your Google Gemini API key from Google AI Studio |
+| `GEMINI_MODEL` | Production, Preview | Model identifier, defaults to `gemini-3.8-flash` |
 | `NEXT_PUBLIC_APP_URL` | Production | Your canonical public URL (e.g., `https://quote.yourdomain.com`) |
 | `AUTH_MODE` | Production | Set to `live` for real Supabase authentication |
-| `AI_MODE` | Production | Set to `live` for live Gemini 2.5 Flash quote drafting |
+| `AI_MODE` | Production | Set to `live` for live Gemini quote drafting |
 
 5. **Deploy**:
    - Click **Deploy**.
