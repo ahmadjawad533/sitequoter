@@ -1,0 +1,6 @@
+customer_name,phone,address,job_type,notes,status
+"Ahmed Khan","(555) 234-5678","12 Oak St",repair,"Condenser fan not spinning. Humming sound from compressor. Suspected dual run capacitor or seized fan motor.",draft
+"Sara Ali","(555) 876-5432","8 Pine Rd",replacement,"Furnace cracked heat exchanger. Unit is 22 years old. Homeowner wants replacement quote for 80k BTU high efficiency gas furnace.",draft
+"Mike Ramirez","(555) 345-6789","3 Elm Ave",maintenance,"Annual spring AC tune-up. Cleaned coils, checked refrigerant subcooling, flushed condensate line.",approved
+"David Miller","(555) 456-7890","104 Highland Ave",repair,"Evaporator coil frozen solid. Airflow restricted. Check blower motor and refrigerant charge.",draft
+"Lisa Chen","(555) 567-8901","280 Maple Dr",replacement,"Old R-22 system leaking. Needs full 3-ton 16 SEER2 split heat pump system quote.",draft

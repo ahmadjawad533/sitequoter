@@ -147,3 +147,141 @@ export function parsePriceBookCsv(csvText: string): CsvParseResult {
     totalRows: lines.length - 1,
   };
 }
+
+export interface CsvJobInput {
+  customerName: string;
+  phone: string;
+  address: string;
+  jobType: "repair" | "replacement" | "maintenance";
+  notes: string;
+  status: "draft" | "sent" | "approved" | "lost";
+}
+
+export interface CsvJobParseResult {
+  validItems: CsvJobInput[];
+  errors: CsvRowError[];
+  totalRows: number;
+}
+
+/**
+ * Parses CSV text into validated HVAC jobs with customer records and row-level error reporting.
+ */
+export function parseJobsCsv(csvText: string): CsvJobParseResult {
+  const lines = csvText
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  if (lines.length === 0) {
+    return {
+      validItems: [],
+      errors: [
+        {
+          rowNumber: 1,
+          rawText: "",
+          message: "CSV file is empty.",
+        },
+      ],
+      totalRows: 0,
+    };
+  }
+
+  // Parse header
+  const headerCells = parseCsvLine(lines[0]).map((h) =>
+    h.toLowerCase().replace(/[\s_-]+/g, "")
+  );
+
+  const nameIdx = headerCells.findIndex(
+    (h) => h === "customername" || h === "name" || h === "customer"
+  );
+  const phoneIdx = headerCells.findIndex((h) => h === "phone" || h === "phonenumber");
+  const addressIdx = headerCells.findIndex((h) => h === "address" || h === "location");
+  const typeIdx = headerCells.findIndex((h) => h === "jobtype" || h === "type");
+  const notesIdx = headerCells.findIndex((h) => h === "notes" || h === "description" || h === "note");
+  const statusIdx = headerCells.findIndex((h) => h === "status");
+
+  const missingColumns: string[] = [];
+  if (nameIdx === -1) missingColumns.push("customer_name");
+  if (addressIdx === -1) missingColumns.push("address");
+
+  if (missingColumns.length > 0) {
+    return {
+      validItems: [],
+      errors: [
+        {
+          rowNumber: 1,
+          rawText: lines[0],
+          message: `Missing required header column(s): ${missingColumns.join(
+            ", "
+          )}. Expected columns: customer_name, phone, address, job_type, notes.`,
+        },
+      ],
+      totalRows: lines.length - 1,
+    };
+  }
+
+  const validItems: CsvJobInput[] = [];
+  const errors: CsvRowError[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const rowNumber = i + 1;
+    const rawLine = lines[i];
+
+    if (!rawLine.trim()) continue;
+
+    const cells = parseCsvLine(rawLine);
+
+    const rawName = (cells[nameIdx] || "").trim();
+    const rawPhone = phoneIdx >= 0 ? (cells[phoneIdx] || "").trim() : "(555) 000-0000";
+    const rawAddress = (cells[addressIdx] || "").trim();
+    const rawType = typeIdx >= 0 ? (cells[typeIdx] || "").toLowerCase().trim() : "repair";
+    const rawNotes = notesIdx >= 0 ? (cells[notesIdx] || "").trim() : "";
+    const rawStatus = statusIdx >= 0 ? (cells[statusIdx] || "").toLowerCase().trim() : "draft";
+
+    if (!rawName) {
+      errors.push({
+        rowNumber,
+        rawText: rawLine,
+        message: "Customer name is required.",
+      });
+      continue;
+    }
+
+    if (!rawAddress) {
+      errors.push({
+        rowNumber,
+        rawText: rawLine,
+        message: "Job address is required.",
+      });
+      continue;
+    }
+
+    let jobType: "repair" | "replacement" | "maintenance" = "repair";
+    if (rawType.includes("replace")) {
+      jobType = "replacement";
+    } else if (rawType.includes("maint") || rawType.includes("tune")) {
+      jobType = "maintenance";
+    }
+
+    let status: "draft" | "sent" | "approved" | "lost" = "draft";
+    if (["sent", "approved", "lost"].includes(rawStatus)) {
+      status = rawStatus as any;
+    }
+
+    validItems.push({
+      customerName: rawName,
+      phone: rawPhone || "(555) 000-0000",
+      address: rawAddress,
+      jobType,
+      notes: rawNotes,
+      status,
+    });
+  }
+
+  return {
+    validItems,
+    errors,
+    totalRows: lines.length - 1,
+  };
+}
+

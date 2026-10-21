@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { CsvJobInput } from "@/lib/csv/parser";
 
 export interface Customer {
   id?: string;
@@ -350,6 +351,89 @@ export function useJobs() {
     }
   };
 
+  const importCsvJobs = async (importedJobs: CsvJobInput[]): Promise<number> => {
+    setSaving(true);
+    setError(null);
+
+    try {
+      if (isMock) {
+        const newJobList: Job[] = importedJobs.map((item, idx) => ({
+          id: `job-imported-${Date.now()}-${idx}`,
+          customer: {
+            id: `cust-${Date.now()}-${idx}`,
+            name: item.customerName,
+            phone: item.phone,
+            address: item.address,
+          },
+          job_type: item.jobType,
+          notes: item.notes,
+          status: item.status,
+          created_at: new Date().toISOString(),
+          photos: [],
+          quote: null,
+        }));
+
+        const updated = [...newJobList, ...jobs];
+        setJobs(updated);
+        localStorage.setItem("sitequote_jobs", JSON.stringify(updated));
+        return newJobList.length;
+      }
+
+      // Live Supabase Mode
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) throw new Error("Not logged in");
+
+      const { data: profile } = await (supabase.from("profiles") as any)
+        .select("company_id")
+        .eq("id", user.id)
+        .single();
+
+      const companyId = profile?.company_id;
+      if (!companyId) throw new Error("No company found for profile");
+
+      let count = 0;
+      for (const item of importedJobs) {
+        // 1. Insert customer
+        const { data: customer, error: custErr } = await (supabase.from("customers") as any)
+          .insert({
+            company_id: companyId,
+            name: item.customerName,
+            phone: item.phone,
+            address: item.address,
+          })
+          .select()
+          .single();
+
+        if (custErr) continue;
+
+        // 2. Insert job
+        const { error: jobErr } = await (supabase.from("jobs") as any)
+          .insert({
+            company_id: companyId,
+            customer_id: customer.id,
+            created_by: user.id,
+            job_type: item.jobType,
+            notes: item.notes,
+            status: item.status || "draft",
+          });
+
+        if (!jobErr) count++;
+      }
+
+      await loadJobs();
+      return count;
+    } catch (err: any) {
+      setError(err?.message || "Failed to import jobs from CSV");
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const filteredJobs = React.useMemo(() => {
     if (statusFilter === "all") return jobs;
     return jobs.filter((j) => j.status === statusFilter);
@@ -364,6 +448,7 @@ export function useJobs() {
     saving,
     error,
     createJob,
+    importCsvJobs,
     refresh: loadJobs,
   };
 }

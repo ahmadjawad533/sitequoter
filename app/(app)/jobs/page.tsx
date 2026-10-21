@@ -3,14 +3,16 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Plus, Briefcase, Camera, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, Briefcase, Camera, Clock, CheckCircle2, AlertCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useJobs, Job } from "@/hooks/useJobs";
+import { JobCsvImportDialog } from "@/components/jobs/JobCsvImportDialog";
 
 function JobsContent() {
   const searchParams = useSearchParams();
   const createdId = searchParams.get("created");
+  const [csvDialogOpen, setCsvDialogOpen] = React.useState(false);
 
   const {
     jobs,
@@ -19,6 +21,7 @@ function JobsContent() {
     setStatusFilter,
     loading,
     error,
+    importCsvJobs,
   } = useJobs();
 
   const getStatusBadge = (status: Job["status"]) => {
@@ -79,17 +82,35 @@ function JobsContent() {
             Track HVAC quotes from draft to approval
           </p>
         </div>
-        <Button
-          asChild
-          size="sm"
-          className="min-h-[48px] bg-[#F97316] text-white hover:bg-[#EA580C] px-4 font-semibold shadow-none rounded-xl"
-        >
-          <Link href="/jobs/new" className="flex items-center gap-1.5">
-            <Plus className="h-4 w-4" />
-            <span>New job</span>
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCsvDialogOpen(true)}
+            className="min-h-[48px] border-[#D1D5DB] text-[#374151] hover:bg-[#F3F4F6] px-3 font-semibold shadow-none rounded-xl flex items-center gap-1.5"
+          >
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Import CSV</span>
+          </Button>
+
+          <Button
+            asChild
+            size="sm"
+            className="min-h-[48px] bg-[#F97316] text-white hover:bg-[#EA580C] px-4 font-semibold shadow-none rounded-xl"
+          >
+            <Link href="/jobs/new" className="flex items-center gap-1.5">
+              <Plus className="h-4 w-4" />
+              <span>New job</span>
+            </Link>
+          </Button>
+        </div>
       </div>
+
+      <JobCsvImportDialog
+        open={csvDialogOpen}
+        onOpenChange={setCsvDialogOpen}
+        onImport={importCsvJobs}
+      />
 
       {createdId && (
         <div className="rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-xs text-[#166534] flex items-center justify-between">
